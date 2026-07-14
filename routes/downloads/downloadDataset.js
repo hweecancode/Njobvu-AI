@@ -559,6 +559,8 @@ async function downloadDataset(req, res) {
             data.push(ymin);
             data.push(ymax);
             data.push(labels[i].LID);
+            data.push(labels[i].X);
+            data.push(labels[i].Y);
 
             rows.push(data);
         }
@@ -579,6 +581,7 @@ async function downloadDataset(req, res) {
             image["width"] = imgW;
             image["id"] = id;
             image["file_name"] = pic;
+            image["name"] = pic; 
             return image;
         }
 
@@ -590,16 +593,55 @@ async function downloadDataset(req, res) {
             return cat;
         }
 
+        function polygonArea(xPoints, yPoints) {
+            const n = xPoints.length;
+            let area = 0;
+            for (let i = 0; i < n; i++) {
+                const x1 = xPoints[i];
+                const y1 = yPoints[i];
+                const x2 = xPoints[(i + 1) % n];
+                const y2 = yPoints[(i + 1) % n]; 
+                area += (x1 * y2) - (x2 * y1);
+                
+            }
+            return Math.abs(area) / 2;
+        }
+      
         function annotation(row) {
             var anno = {};
-            var area = row[2] * row[3];
-            anno["segmentation"] = [];
-            anno["iscrowd"] = 0;
-            anno["area"] = area;
-            anno["image_id"] = imageNames.indexOf(row[0]);
-            anno["bbox"] = [row[4], row[6], row[2], row[3]];
-            anno["category_id"] = cnames.indexOf(row[1]);
-            anno["id"] = row[8];
+            var isPolygon = row[2] === 0 & row[3] === 0;
+            
+          if (isPolygon) {
+              var xPoints = row[9].split(',').map(parseFloat);
+              var yPoints = row[10].split(',').map(parseFloat);
+              var segmentation = [];
+            
+              for (var i = 0; i < xPoints.length; i++) {
+                segmentation.push(xPoints[i]);
+                segmentation.push(yPoints[i]);
+              }
+
+              var minX = Math.min.apply(null, xPoints);
+              var minY = Math.min.apply(null, yPoints);
+              var bboxW = Math.max.apply(null, xPoints) - minX;
+              var bboxH = Math.max.apply(null, yPoints) - minY;
+                
+              anno["segmentation"] = [segmentation];
+              anno["iscrowd"] = 0;
+              anno["area"] = polygonArea(xPoints, yPoints);
+              anno["image_id"] = imageNames.indexOf(row[0]);
+              anno["bbox"] = [minX, minY, bboxW, bboxH];
+              anno["category_id"] = cnames.indexOf(row[1]);
+              anno["id"] = row[8];
+          } else {
+                anno["segmentation"] = [];
+                anno["iscrowd"] = 0;
+                anno["area"] = row[2] * row[3];
+                anno["image_id"] = imageNames.indexOf(row[0]);
+                anno["bbox"] = [row[4], row[6], row[2], row[3]];
+                anno["category_id"] = cnames.indexOf(row[1]);
+                anno["id"] = row[8];
+            }
 
             return anno;
         }
@@ -609,6 +651,8 @@ async function downloadDataset(req, res) {
         }
         for (var i = 0; i < rows.length; i++) {
             annotations.push(annotation(rows[i]));
+            if (anno.area === 0) continue; 
+            annotations.push(anno);
         }
         for (var i = 0; i < cnames.length; i++) {
             categories.push(category(cnames[i]));

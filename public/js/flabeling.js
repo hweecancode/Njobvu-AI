@@ -550,9 +550,15 @@ var SegmentationStrategy = {
         var xPoints = [];
         var yPoints = [];
 
+        // for (var i = 0; i < shape.segmentationPoints.length; i++) {
+        //     xPoints[i] = shape.segmentationPoints[i].x;
+        //     yPoints[i] = shape.segmentationPoints[i].y;
+        // }
         for (var i = 0; i < shape.segmentationPoints.length; i++) {
-            xPoints[i] = shape.segmentationPoints[i].x;
-            yPoints[i] = shape.segmentationPoints[i].y;
+            console.log(`before division: x=${shape.segmentationPoints[i].x} y=${shape.segmentationPoints[i].y}`);
+            xPoints[i] = shape.segmentationPoints[i].x / diff_width_ratio;
+            yPoints[i] = shape.segmentationPoints[i].y / diff_width_ratio;
+            console.log(`after division: x=${xPoints[i]} y=${yPoints[i]}`);
         }
 
         $('#dynamic_form').append(
@@ -816,20 +822,28 @@ for (var i = 0; i < list_labels.length; i += 6) {
         canvas.add(rect);
     } else { //This is a polygon
         console.log("[redraw] Attempting to load polygon", labelId);
+        console.log("[redraw] diff_width_ratio:", diff_width_ratio);
+        console.log("[redraw] xVal:", xVal);
+        console.log("[redraw] yVal:", yVal);
         var xCoords = xVal.split(',');
         var yCoords = yVal.split(',');
 
         // Create points array for fabric.Polygon
         var points = [];
         for (var j = 0; j < xCoords.length; j++) {
-            points.push({ x: parseFloat(xCoords[j]), y: parseFloat(yCoords[j]) });
-        }
+          points.push({
+            x: parseFloat(xCoords[j]) * diff_width_ratio,
+            y: parseFloat(yCoords[j]) * diff_width_ratio
+          });
 
+          console.log("x: ", xCoords[j] * diff_width_ratio);
+          console.log("y ", yCoords[j] * diff_width_ratio);
+        }
         // Calculate bounding box for the polygon
-        var minX = Math.min(...xCoords);
-        var maxX = Math.max(...xCoords);
-        var minY = Math.min(...yCoords);
-        var maxY = Math.max(...yCoords);
+        var minX = Math.min.apply(Math, points.map(function (p) { return p.x}));
+        var maxX = Math.max.apply(Math, points.map(function (p) { return p.x}));
+        var minY = Math.min.apply(Math, points.map(function (p) { return p.y}));
+        var maxY = Math.max.apply(Math, points.map(function (p) { return p.y }));
 
 
         // Normalize points relative to bounding box
@@ -862,6 +876,10 @@ for (var i = 0; i < list_labels.length; i += 6) {
         polygon.lockMovementX = true;
         polygon.lockMovementY = true;
 
+        console.log("[redraw] minX:", minX, "minY:", minY);
+        console.log("[redraw] normalizedPoints:", normalizedPoints);
+        console.log("[redraw] canvas width:", canvas.getWidth(), "canvas height:", canvas.getHeight());
+      
         canvas.add(polygon);
         canvas.renderAll();
     }

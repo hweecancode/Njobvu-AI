@@ -100,6 +100,7 @@ async function updateLabels(req, res) {
                     Number(req.body.W[i]),
                     Number(req.body.H[i]),
                     IName,
+                    Number(changeWidth),
                 );
 
                 if (currentConfidence[i][0] && currentConfidence.length > 0) {
@@ -124,6 +125,7 @@ async function updateLabels(req, res) {
                 Number(req.body.W),
                 Number(req.body.H),
                 IName,
+                Number(changeWidth),
             );
 
             if (currentConfidence[0][0] && currentConfidence.length > 0) {
