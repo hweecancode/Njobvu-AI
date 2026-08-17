@@ -44,6 +44,11 @@ async function transferAdmin(req, res) {
 
     fs.renameSync(projectPath, newPath);
 
+    await queries.managed.sql(
+        "UPDATE Access SET Project_Parent = ? WHERE PName = ?",
+        [PName, PName],
+    );
+
     if (validation) return res.redirect("/configV?IDX=" + IDX);
     return res.redirect("/config?IDX=" + IDX);
 }
