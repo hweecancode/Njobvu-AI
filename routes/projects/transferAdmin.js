@@ -9,15 +9,12 @@ async function transferAdmin(req, res) {
 
     var NewAdmin = req.body.NewAdmin;
 
-    var results1 = await db.getAsync(
-        "SELECT COUNT(*) AS THING FROM Projects WHERE Admin = '" +
-            NewAdmin +
-            "' AND PName = '" +
-            PName +
-            "'",
+    var adminProjects = await db.getAsync(
+    	"SELECT COUNT(*) AS count FROM Projects WHERE Admin = ? AND PName = ?",
+        [NewAdmin, PName]
     );
 
-    if (results1.THING != 0) {
+    if (adminProjects.count != 0) {
         return res.redirect("/config?IDX=" + IDX);
     }
 
